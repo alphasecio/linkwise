@@ -27,8 +27,6 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY . .
 
-# Create volume for SQLite database
-VOLUME ["/app/data"]
 ENV DB_PATH=/app/data/linkwise.db
 
 # Expose port
