@@ -200,11 +200,6 @@ def get_json():
     data = request.get_json(silent=True)
     return data if isinstance(data, dict) else {}
 
-def get_db():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.execute("PRAGMA foreign_keys = ON;")
-    return conn
-
 @app.route('/')
 def index():
     return send_from_directory('static', 'index.html')
