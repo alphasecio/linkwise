@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="author" content="alphasec">
+    <meta name="description" content="Linkwise - a smart link aggregator">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linkwise - Smart Link Aggregator</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Auth Screen -->
+        <div id="authScreen" class="auth-screen">
+            <div class="auth-box">
+                <h1>📚 Linkwise</h1>
+                <p class="tagline">Save links. Get summaries. Stay organized.</p>
+                <div id="authForm">
+                    <input type="email" id="email" placeholder="Email" autocomplete="email">
+                    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+                    <button id="signInBtn" class="primary-btn">Sign In</button>
+                    <button id="signUpBtn" class="secondary-btn highlight-btn">Create Account</button>
+                </div>
+                <div id="authError" class="error-message"></div>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="appScreen" class="app-screen hidden">
+            <header>
+                <div class="header-content">
+                    <h1><a href="/" class="home-link">📚 Linkwise</a></h1>
+                    <div class="header-right">
+                        <input type="text" id="searchInput" class="header-search" placeholder="Search links and tags..." autocomplete="off">
+                        <div class="user-dropdown">
+                            <button class="user-icon-btn" id="userMenuBtn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu hidden" id="userMenu">
+                                <div class="dropdown-header">
+                                    <span id="userEmail" class="user-email-dropdown"></span>
+                                </div>
+                                <button id="signOutBtn" class="dropdown-item">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                        <polyline points="16 17 21 12 16 7"></polyline>
+                                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                                    </svg>
+                                    Sign Out
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main>
+                <div class="add-link-section">
+                    <div class="input-group">
+                        <input type="url" id="urlInput" placeholder="Paste a link to save..." autocomplete="off">
+                        <button id="addLinkBtn" class="primary-btn">
+                            <span id="addBtnText">Save</span>
+                            <span id="addBtnLoader" class="loader hidden"></span>
+                        </button>
+                    </div>
+                    <div id="addLinkError" class="error-message"></div>
+                </div>
+
+                <div id="linksContainer" class="links-container">
+                    <div class="empty-state">
+                        <p>No links saved yet. Add your first link above!</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
