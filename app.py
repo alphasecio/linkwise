@@ -35,8 +35,6 @@ gemini_api_key = os.environ.get("GEMINI_API_KEY")
 if not gemini_api_key:
     raise RuntimeError("GEMINI_API_KEY must be set in environment.")
 
-DB_PATH = os.environ.get("DB_PATH", "./linkwise.db")
-
 def safe_url(url):
     """Basic SSRF protection — allow only http/https and block private/internal hosts."""
     parsed = urlparse(url)
