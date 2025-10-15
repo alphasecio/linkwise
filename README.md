@@ -2,6 +2,8 @@
 
 A minimalist web app to save and categorize web links with automatic article summarization and tag generation using AI.
 
+![linkwise](./linkwise.png)
+
 **This version uses:**
 - ✅ **SQLite** for database (no external DB service needed)
 - ✅ **Flask-Login** for authentication (no Firebase/Supabase)
