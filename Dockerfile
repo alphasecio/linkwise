@@ -34,3 +34,6 @@ EXPOSE 8080
 
 # Run the application with Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--timeout", "120", "app:app"]
+
+RUN useradd -m appuser
+USER appuser
