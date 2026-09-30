@@ -3,19 +3,23 @@
 
 # Database files
 *.db
+*.db-wal
+*.db-shm
+data/
 
 # Python cache
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
 
-# Virtual environments (if any)
+# Virtual environments
 venv/
-env/
-*.egg-info/
+.venv/
 
-# Git & misc
+# Git, docs & misc
 .git
 .gitignore
+.dockerignore
+Dockerfile
+README.md
+*.png
 .DS_Store
