@@ -1,134 +1,229 @@
-let currentUser = null;
+const MIN_PASSWORD_LENGTH = 8;
+
+const $ = (id) => document.getElementById(id);
+const authScreen = $('authScreen');
+const appScreen = $('appScreen');
+const emailInput = $('email');
+const passwordInput = $('password');
+const signInBtn = $('signInBtn');
+const signUpBtn = $('signUpBtn');
+const signOutBtn = $('signOutBtn');
+const authError = $('authError');
+const userEmail = $('userEmail');
+const userMenuBtn = $('userMenuBtn');
+const userMenu = $('userMenu');
+const urlInput = $('urlInput');
+const addLinkBtn = $('addLinkBtn');
+const addBtnText = $('addBtnText');
+const addBtnLoader = $('addBtnLoader');
+const addLinkError = $('addLinkError');
+const searchInput = $('searchInput');
+const linksContainer = $('linksContainer');
+
 let allLinks = [];
 
-const authScreen = document.getElementById('authScreen');
-const appScreen = document.getElementById('appScreen');
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
-const signInBtn = document.getElementById('signInBtn');
-const signUpBtn = document.getElementById('signUpBtn');
-const signOutBtn = document.getElementById('signOutBtn');
-const authError = document.getElementById('authError');
-const userEmail = document.getElementById('userEmail');
-const userMenuBtn = document.getElementById('userMenuBtn');
-const userMenu = document.getElementById('userMenu');
-const urlInput = document.getElementById('urlInput');
-const addLinkBtn = document.getElementById('addLinkBtn');
-const addBtnText = document.getElementById('addBtnText');
-const addBtnLoader = document.getElementById('addBtnLoader');
-const addLinkError = document.getElementById('addLinkError');
-const searchInput = document.getElementById('searchInput');
-const linksContainer = document.getElementById('linksContainer');
+async function api(path, { method = 'GET', body } = {}) {
+    const options = { method, credentials: 'same-origin', headers: {} };
+    if (body !== undefined) {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(body);
+    }
+    const res = await fetch(path, options);
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401 && path !== '/api/signin') showAuth();
+    return { ok: res.ok, data };
+}
 
-userMenuBtn.addEventListener('click', e => { e.stopPropagation(); userMenu.classList.toggle('hidden'); });
-document.addEventListener('click', e => { if (!userMenu.classList.contains('hidden') && !userMenu.contains(e.target)) userMenu.classList.add('hidden'); });
+function showAuth() {
+    allLinks = [];
+    linksContainer.replaceChildren();
+    authScreen.classList.remove('hidden');
+    appScreen.classList.add('hidden');
+}
+
+async function showApp(email) {
+    emailInput.value = '';
+    passwordInput.value = '';
+    authError.textContent = '';
+    userEmail.textContent = email;
+    authScreen.classList.add('hidden');
+    appScreen.classList.remove('hidden');
+    await loadLinks();
+}
 
 async function checkAuth() {
     try {
-        const res = await fetch('/api/me', { credentials: 'include' });
-        const data = await res.json();
-        if (data.authenticated) { currentUser = { email: data.email }; showApp(); await loadLinks(); } 
+        const { data } = await api('/api/me');
+        if (data.authenticated) await showApp(data.email);
         else showAuth();
-    } catch { showAuth(); }
+    } catch {
+        showAuth();
+    }
 }
 
-function showAuth() { authScreen.classList.remove('hidden'); appScreen.classList.add('hidden'); }
-function showApp() { authScreen.classList.add('hidden'); appScreen.classList.remove('hidden'); userEmail.textContent = currentUser.email; }
-
-signUpBtn.addEventListener('click', async () => {
-    const email = emailInput.value.trim(), password = passwordInput.value;
-    if (!email || !password) { authError.textContent='Please enter email and password'; return; }
-    if (password.length<6) { authError.textContent='Password must be at least 6 characters'; return; }
-    try {
-        authError.textContent='';
-        const res = await fetch('/api/signup', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({email,password}) });
-        const data = await res.json();
-        if (res.ok) { currentUser={email:data.email}; emailInput.value=''; passwordInput.value=''; showApp(); await loadLinks(); } 
-        else authError.textContent=data.error||'Sign up failed';
-    } catch { authError.textContent='Network error. Please try again.'; }
-});
-
-signInBtn.addEventListener('click', async () => {
-    const email=emailInput.value.trim(), password=passwordInput.value;
-    if(!email||!password){ authError.textContent='Please enter email and password'; return; }
-    try {
-        authError.textContent='';
-        const res=await fetch('/api/signin',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email,password})});
-        const data=await res.json();
-        if(res.ok){ currentUser={email:data.email}; emailInput.value=''; passwordInput.value=''; showApp(); await loadLinks(); } 
-        else authError.textContent=data.error||'Sign in failed';
-    } catch { authError.textContent='Network error. Please try again.'; }
-});
-
-signOutBtn.addEventListener('click', async ()=>{
-    userMenu.classList.add('hidden'); 
-    try { await fetch('/api/signout',{method:'POST',credentials:'include'}); currentUser=null; allLinks=[]; showAuth(); } 
-    catch(e){ console.error('Sign out failed',e); }
-});
-
-addLinkBtn.addEventListener('click', async ()=>{
-    const url=urlInput.value.trim();
-    if(!url){ addLinkError.textContent='Please enter a URL'; return; }
-    if(!isValidUrl(url)){ addLinkError.textContent='Please enter a valid URL'; return; }
-    try{
-        addLinkError.textContent=''; addBtnText.textContent='Saving...'; addBtnLoader.classList.remove('hidden'); addLinkBtn.disabled=true;
-        const res=await fetch('/api/links',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({url})});
-        const data=await res.json();
-        if(res.ok&&data.success){ urlInput.value=''; await loadLinks(); } 
-        else addLinkError.textContent=data.error||'Failed to add link';
-    } catch { addLinkError.textContent='Failed to add link. Please try again.'; }
-    finally { addBtnText.textContent='Save'; addBtnLoader.classList.add('hidden'); addLinkBtn.disabled=false; }
-});
-
-async function loadLinks(){
-    try{
-        const res=await fetch('/api/links',{credentials:'include'});
-        const data=await res.json();
-        if(data.success){ allLinks=data.links; renderLinks(allLinks); }
-    } catch(e){ console.error('Failed to load links:', e); }
-}
-
-function renderLinks(links){
-    if(!links.length){
-        linksContainer.innerHTML='<div class="empty-state"><p>No links found.</p></div>';
+async function authenticate(path, fallbackError) {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    if (!email || !password) { authError.textContent = 'Please enter email and password'; return; }
+    if (path === '/api/signup' && password.length < MIN_PASSWORD_LENGTH) {
+        authError.textContent = `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
         return;
     }
-    linksContainer.innerHTML = links.map(link => `
-        <div class="link-card" data-link-id="${link.id}">
-            <div class="link-header">
-                <div style="flex: 1;">
-                    <div class="link-title">
-                        <a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer" class="link-icon" title="${escapeHtml(link.url)}">🔗</a>
-                        <span>${escapeHtml(link.title)}</span>
-                    </div>
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                    <button class="delete-btn" onclick="deleteLink(${link.id})" title="Delete link">×</button>
-                </div>
-            </div>
-            <div class="link-summary">${escapeHtml(link.summary)}</div>
-            <div class="link-tags">
-                ${link.tags.slice(0,6).map(tag => `<span class="tag">#${escapeHtml(tag)}</span>`).join('')}
-                <span class="link-date">${formatDate(link.created_at)}</span>
-            </div>
-        </div>
-    `).join('');
+    authError.textContent = '';
+    try {
+        const { ok, data } = await api(path, { method: 'POST', body: { email, password } });
+        if (ok) await showApp(data.email);
+        else authError.textContent = data.error || fallbackError;
+    } catch {
+        authError.textContent = 'Network error. Please try again.';
+    }
 }
 
-window.deleteLink=async (id)=>{ if(!confirm('Delete this link?')) return; try{ const res=await fetch(`/api/links/${id}`,{method:'DELETE',credentials:'include'}); const data=await res.json(); if(data.success) await loadLinks(); } catch(e){ console.error('Failed to delete link',e); } };
+signInBtn.addEventListener('click', () => authenticate('/api/signin', 'Sign in failed'));
+signUpBtn.addEventListener('click', () => authenticate('/api/signup', 'Sign up failed'));
 
-searchInput.addEventListener('input', e=>{
-    const q=e.target.value.toLowerCase().trim();
-    if(!q){ renderLinks(allLinks); return; }
-    renderLinks(allLinks.filter(l=>l.title.toLowerCase().includes(q)||l.url.toLowerCase().includes(q)||l.summary.toLowerCase().includes(q)||l.tags.some(t=>t.toLowerCase().includes(q))));
+signOutBtn.addEventListener('click', async () => {
+    userMenu.classList.add('hidden');
+    try {
+        await api('/api/signout', { method: 'POST' });
+        searchInput.value = '';
+        showAuth();
+    } catch (e) {
+        console.error('Sign out failed', e);
+    }
 });
 
-emailInput.addEventListener('keypress',e=>{ if(e.key==='Enter') passwordInput.focus(); });
-passwordInput.addEventListener('keypress',e=>{ if(e.key==='Enter') signInBtn.click(); });
-urlInput.addEventListener('keypress',e=>{ if(e.key==='Enter') addLinkBtn.click(); });
+userMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); userMenu.classList.toggle('hidden'); });
+document.addEventListener('click', (e) => {
+    if (!userMenu.classList.contains('hidden') && !userMenu.contains(e.target)) userMenu.classList.add('hidden');
+});
 
-function isValidUrl(string){ try{ new URL(string); return true; } catch{return false; } }
-function escapeHtml(text){ if(text==null) return''; const div=document.createElement('div'); div.textContent=text; return div.innerHTML; }
-function formatDate(dateString){ if(!dateString) return 'Just now'; const d=new Date(dateString), now=new Date(), diff=now-d, days=Math.floor(diff/(1000*60*60*24)); return days===0?'Today':days===1?'Yesterday':days<7?`${days} days ago`:d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); }
+addLinkBtn.addEventListener('click', async () => {
+    const url = urlInput.value.trim();
+    if (!url) { addLinkError.textContent = 'Please enter a URL'; return; }
+    if (!isHttpUrl(url)) { addLinkError.textContent = 'Please enter a valid http(s) URL'; return; }
+
+    addLinkError.textContent = '';
+    addBtnText.textContent = 'Saving...';
+    addBtnLoader.classList.remove('hidden');
+    addLinkBtn.disabled = true;
+    try {
+        const { ok, data } = await api('/api/links', { method: 'POST', body: { url } });
+        if (ok && data.success) {
+            urlInput.value = '';
+            allLinks.unshift(data.link);
+            applyFilter();
+        } else {
+            addLinkError.textContent = data.error || 'Failed to add link';
+        }
+    } catch {
+        addLinkError.textContent = 'Failed to add link. Please try again.';
+    } finally {
+        addBtnText.textContent = 'Save';
+        addBtnLoader.classList.add('hidden');
+        addLinkBtn.disabled = false;
+    }
+});
+
+linksContainer.addEventListener('click', async (e) => {
+    const button = e.target.closest('.delete-btn');
+    if (!button || !confirm('Delete this link?')) return;
+    const id = Number(button.dataset.id);
+    try {
+        const { ok } = await api(`/api/links/${id}`, { method: 'DELETE' });
+        if (ok) {
+            allLinks = allLinks.filter((l) => l.id !== id);
+            applyFilter();
+        }
+    } catch (err) {
+        console.error('Failed to delete link', err);
+    }
+});
+
+async function loadLinks() {
+    try {
+        const { ok, data } = await api('/api/links');
+        if (ok && data.success) {
+            allLinks = data.links;
+            applyFilter();
+        }
+    } catch (e) {
+        console.error('Failed to load links:', e);
+    }
+}
+
+function applyFilter() {
+    const q = searchInput.value.toLowerCase().trim();
+    const links = !q ? allLinks : allLinks.filter((l) =>
+        [l.title, l.url, l.summary, ...l.tags].some((field) => field.toLowerCase().includes(q)));
+    renderLinks(links, q ? 'No links match your search.' : 'No links saved yet. Add your first link above!');
+}
+
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+}
+
+function renderLinks(links, emptyMessage) {
+    if (!links.length) {
+        const empty = el('div', 'empty-state');
+        empty.append(el('p', null, emptyMessage));
+        linksContainer.replaceChildren(empty);
+        return;
+    }
+    linksContainer.replaceChildren(...links.map((link) => {
+        const anchor = el('a', 'link-icon', '🔗');
+        if (isHttpUrl(link.url)) anchor.href = link.url;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        anchor.title = link.url;
+
+        const title = el('div', 'link-title');
+        title.append(anchor, el('span', null, link.title));
+
+        const del = el('button', 'delete-btn', '×');
+        del.type = 'button';
+        del.title = 'Delete link';
+        del.dataset.id = link.id;
+
+        const header = el('div', 'link-header');
+        header.append(title, del);
+
+        const tags = el('div', 'link-tags');
+        tags.append(...link.tags.slice(0, 6).map((t) => el('span', 'tag', `#${t}`)),
+            el('span', 'link-date', formatDate(link.created_at)));
+
+        const card = el('div', 'link-card');
+        card.append(header, el('div', 'link-summary', link.summary), tags);
+        return card;
+    }));
+}
+
+searchInput.addEventListener('input', applyFilter);
+emailInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') passwordInput.focus(); });
+passwordInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') signInBtn.click(); });
+urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !addLinkBtn.disabled) addLinkBtn.click(); });
+
+function isHttpUrl(value) {
+    try {
+        const { protocol } = new URL(value);
+        return protocol === 'http:' || protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'Just now';
+    const d = new Date(dateString);
+    const startOfDay = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+    const days = Math.round((startOfDay(new Date()) - startOfDay(d)) / 86400000);
+    if (days <= 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days} days ago`;
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
 checkAuth();
