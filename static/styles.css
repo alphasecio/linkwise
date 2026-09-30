@@ -79,8 +79,10 @@ body {
     border-radius: 6px;
     margin-right: 10px;
     margin-top: 16px;
-    box-sizing: border-box;
 }
+
+button { cursor: pointer; font: inherit; }
+button:disabled { cursor: progress; opacity: 0.8; }
 
 .primary-btn {
     background: var(--primary);
@@ -116,7 +118,6 @@ body {
 }
 
 /* Main App */
-.app-screen { display: block; }
 .hidden { display: none !important; }
 
 header {
@@ -225,11 +226,11 @@ header h1 { font-size: 1.8rem; white-space: nowrap; }
     box-shadow: 0 4px 12px var(--shadow);
 }
 
-.link-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.link-title { font-size: 1.2rem; font-weight: 600; color: var(--text); display: flex; align-items: flex-start; gap: 8px; }
+.link-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.link-title { flex: 1; min-width: 0; font-size: 1.2rem; font-weight: 600; color: var(--text); display: flex; align-items: flex-start; gap: 8px; overflow-wrap: anywhere; }
 
 .link-icon { color: var(--primary); text-decoration: none; margin-top: 2px; }
-.link-summary { color: var(--text-secondary); margin: 16px 0; line-height: 1.6; }
+.link-summary { color: var(--text-secondary); margin: 16px 0; line-height: 1.6; overflow-wrap: anywhere; }
 
 .link-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; align-items: center; }
 .link-date { color: var(--text-secondary); font-size: 13px; margin-left: auto; white-space: nowrap; }
@@ -248,6 +249,15 @@ header h1 { font-size: 1.8rem; white-space: nowrap; }
 /* Error Messages */
 .error-message { color: var(--error); font-size: 14px; margin-top: 10px; text-align: center; }
 
+.input-group .primary-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.loader {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Responsive */
